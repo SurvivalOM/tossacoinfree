@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b2c54">
+<title>Flip a Coin Online — Heads, Tails or Yes / No | TossACoinFree.com</title>
+<meta name="description" content="A free, beautiful online coin flip. Toss one or three coins, switch to Yes/No mode to decide a question, hear the clink, and see your flip history. No app, no sign-up.">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="Flip a Coin — Heads, Tails or Yes / No">
+<meta property="og:description" content="A free, tactile online coin flip. One or three coins, a Yes/No decision mode, sound, and history.">
+<meta property="og:type" content="website">
+<!-- Google AdSense: after approval, paste your loader script here:
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+-->
+<style>
+  :root{
+    --navy:#1b2c54; --navy-d:#101b39; --gold:#c6a249; --gold-l:#e7c66a; --gold-h:#fbe9a8; --gold-d:#8a6c2a;
+    --ink:#eaf0ff; --muted:#9fb0d8; --card:rgba(255,255,255,.06); --line:rgba(255,255,255,.10); --t:#b9c6e6;
+    --coin:clamp(120px,32vw,168px);
+    /* coin colour scheme (changed by the "Colour the coin" swatches) */
+    --c1:#fdeeb0; --c2:#ecce78; --c3:#cda74e; --c4:#a9852f; --c5:#82642a; --glyph:#7a5e22; --rim:#6f5621;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;}
+  body{font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;
+    background:radial-gradient(120% 80% at 50% 0%, #243a6b 0%, var(--navy) 45%, var(--navy-d) 100%);
+    background-attachment:fixed; color:var(--ink); min-height:100vh; line-height:1.55;}
+  a{color:var(--gold-l);}
+  .wrap{max-width:640px;margin:0 auto;padding:0 16px 40px;}
+
+  /* FPL banner (toggle with FPL_SHOW in the script) */
+  #fplbar{background:linear-gradient(90deg,#142142,#243a6b);border-bottom:1px solid var(--line);}
+  #fplbar .in{max-width:640px;margin:0 auto;padding:8px 16px;display:flex;align-items:center;gap:10px;justify-content:center;font-size:13px;color:#cdd7f0;}
+  #fplbar b{color:var(--gold-l);} #fplbar a{font-weight:700;text-decoration:none;white-space:nowrap;}
+
+  /* Ad slots */
+  .ad{margin:16px auto;max-width:100%;min-height:90px;border:1px dashed rgba(255,255,255,.16);border-radius:10px;
+    display:flex;align-items:center;justify-content:center;color:#71809f;font-size:12px;letter-spacing:.12em;text-transform:uppercase;background:rgba(255,255,255,.02);}
+  .ad small{opacity:.8;}
+
+  header{text-align:center;padding:22px 0 6px;}
+  h1{font-size:clamp(22px,5vw,30px);margin:0;letter-spacing:.2px;}
+  .sub{color:var(--muted);font-size:14px;margin:6px 0 0;}
+  .mutebtn{position:absolute;top:10px;right:14px;width:40px;height:40px;border-radius:11px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:17px;cursor:pointer;}
+  .topbar{position:relative;}
+
+  .seg{position:relative;display:grid;grid-template-columns:1fr 1fr;background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:14px;padding:6px;margin:14px 0 10px;}
+  .seg-btn{position:relative;z-index:1;background:none;border:0;color:var(--muted);font:600 15px/1 inherit;padding:13px 0;cursor:pointer;border-radius:10px;transition:color .25s;}
+  .seg-btn.active{color:var(--navy);}
+  .seg-thumb{position:absolute;top:6px;left:6px;height:calc(100% - 12px);width:calc(50% - 6px);border-radius:10px;background:linear-gradient(180deg,var(--gold-l),var(--gold));box-shadow:0 5px 14px rgba(198,162,73,.4);transition:transform .3s cubic-bezier(.34,1.3,.5,1);z-index:0;}
+  .seg.right .seg-thumb{transform:translateX(100%);}
+  .seg--sm{max-width:240px;margin-left:auto;margin-right:auto;}
+  .seg--sm .seg-btn{font-size:13.5px;padding:9px 0;}
+
+  .ask{margin:2px 0 12px;}
+  .prompt{margin:0 0 9px;font:italic 400 13.5px/1.5 Georgia,serif;color:#d7e0f6;text-align:center;}
+  .qrow{display:flex;gap:8px;}
+  #qinput{flex:1;min-width:0;background:rgba(255,255,255,.07);border:1px solid var(--line);color:var(--ink);border-radius:13px;padding:13px 14px;font:500 15px/1.2 inherit;outline:none;}
+  #qinput::placeholder{color:#8294bd;} #qinput:focus{border-color:var(--gold);}
+  .mic{width:50px;flex:0 0 auto;border-radius:13px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:19px;cursor:pointer;}
+  .mic.on{background:linear-gradient(180deg,#e26b6b,#b94a4a);border-color:transparent;}
+
+  .stage{position:relative;display:flex;align-items:flex-end;justify-content:center;gap:clamp(14px,5vw,30px);min-height:clamp(230px,34vh,300px);padding:26px 0 6px;}
+  .slot{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;}
+  .coin-wrap{perspective:850px;}
+  .coin{width:var(--coin);height:var(--coin);position:relative;transform-style:preserve-3d;cursor:pointer;}
+  .face{position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;display:grid;place-items:center;overflow:hidden;
+    background:radial-gradient(circle at 35% 30%, var(--c1) 0%, var(--c2) 20%, var(--c3) 46%, var(--c4) 70%, var(--c5) 100%);
+    box-shadow:inset 0 0 0 4px rgba(255,255,255,.28),inset 0 0 0 7px rgba(0,0,0,.28),inset 0 9px 18px rgba(255,255,255,.3),inset 0 -13px 24px rgba(0,0,0,.4),0 0 0 2px var(--rim);}
+  .face::before{content:"";position:absolute;inset:11%;border-radius:50%;border:2px dashed rgba(0,0,0,.28);}
+  .glyph{font:800 calc(var(--coin)*.42)/1 Georgia,serif;color:var(--glyph);text-shadow:0 1px 0 rgba(255,255,255,.4),0 -1px 1px rgba(0,0,0,.35);}
+  .face .lbl{position:absolute;bottom:13%;font:700 calc(var(--coin)*.08)/1 'Segoe UI';letter-spacing:.2em;color:var(--glyph);opacity:.8;}
+  .tails{transform:rotateX(180deg);}
+  .floor-shadow{width:calc(var(--coin)*.9);height:calc(var(--coin)*.18);margin-top:12px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(0,0,0,.5),rgba(0,0,0,0) 70%);}
+  .stage.three{--coin:clamp(88px,24vw,120px);}
+  .stage.yn .glyph{font-size:calc(var(--coin)*.2);text-transform:uppercase;letter-spacing:.03em;}
+  .stage.yn .face .lbl{display:none;}
+
+  .result{text-align:center;min-height:60px;margin:4px 0 6px;}
+  .verdict{font-size:30px;font-weight:800;}
+  .verdict.h{color:var(--gold-l);} .verdict.t{color:var(--t);} .verdict.idle{color:var(--muted);font-weight:600;font-size:20px;}
+  .tally{margin-top:5px;font-size:14.5px;color:var(--muted);font-weight:600;}
+  .flipnum{text-align:center;color:var(--muted);font-size:13.5px;margin:2px 0 12px;}
+  .flipnum b{color:var(--ink);font-size:16px;letter-spacing:1px;}
+
+  .flip-btn{width:100%;padding:17px;border:0;border-radius:16px;cursor:pointer;font:800 18px/1 inherit;letter-spacing:.6px;color:var(--navy);background:linear-gradient(180deg,var(--gold-h),var(--gold-l) 40%,var(--gold));box-shadow:0 10px 24px rgba(198,162,73,.4),inset 0 1px 0 rgba(255,255,255,.6);}
+  .flip-btn:active{transform:translateY(2px);}
+  .flip-btn:disabled{opacity:.65;}
+
+  .colors{display:flex;gap:10px;justify-content:center;align-items:center;margin:16px 0 4px;flex-wrap:wrap;}
+  .colors .lab{width:100%;text-align:center;color:var(--muted);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;}
+  .sw{width:30px;height:30px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,255,255,.35);}
+  .sw.sel{border-color:#fff;box-shadow:0 0 0 3px rgba(231,198,106,.5);}
+
+  .share{display:flex;gap:8px;justify-content:center;margin:14px 0 0;flex-wrap:wrap;}
+  .share button{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:9px 14px;font:600 13px/1 inherit;cursor:pointer;}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0 14px;}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 8px;text-align:center;}
+  .stat .num{display:block;font-size:24px;font-weight:800;} .stat:nth-child(1) .num{color:var(--gold-l);} .stat:nth-child(2) .num{color:var(--t);}
+  .stat .lbl{font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-top:4px;display:block;}
+
+  .history{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;}
+  .history-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700;}
+  .link-btn{background:none;border:0;color:var(--gold-l);font:700 12px/1 inherit;cursor:pointer;text-transform:uppercase;}
+  .hlist{display:flex;flex-direction:column;gap:9px;} .empty{color:var(--muted);font-size:13px;font-style:italic;}
+  .qa{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:11px 12px;}
+  .qa-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .qa-q{font:500 14.5px/1.45 inherit;margin:2px 0 0;} .qa-q .quote{color:var(--gold);font-weight:800;}
+  .qa-ans{font-weight:800;font-size:15px;padding:3px 11px;border-radius:999px;white-space:nowrap;}
+  .qa-ans.h{background:linear-gradient(180deg,var(--gold-l),var(--gold));color:var(--navy);} .qa-ans.t{background:rgba(185,198,230,.16);color:var(--t);border:1px solid rgba(185,198,230,.28);}
+  .qa-meta{font-size:11px;color:#7e90bb;margin-top:7px;display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
+  .mini{display:inline-flex;gap:3px;} .pill{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:10.5px;font-weight:800;}
+  .pill.h{background:linear-gradient(180deg,var(--gold-l),var(--gold));color:var(--navy);} .pill.t{background:rgba(185,198,230,.18);color:var(--t);}
+  .tag{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#7e90bb;border:1px solid var(--line);border-radius:6px;padding:2px 6px;}
+
+  /* Content for readers + AdSense */
+  .content{margin-top:26px;}
+  .content h2{font-size:20px;margin:26px 0 8px;color:#fff;}
+  .content h3{font-size:16px;margin:18px 0 6px;color:var(--gold-l);}
+  .content p{color:#cdd6ec;font-size:15px;margin:8px 0;}
+  .content ul{color:#cdd6ec;font-size:15px;padding-left:20px;}
+  footer{margin-top:30px;border-top:1px solid var(--line);padding-top:18px;text-align:center;color:var(--muted);font-size:13px;}
+  footer a{margin:0 8px;text-decoration:none;white-space:nowrap;}
+  footer .fpl{display:block;margin-top:10px;color:#cdd7f0;}
+</style>
+</head>
+<body>
+  <div id="fplbar"><div class="in">🛡️ <span>A free tool by <b>Future Proofing Lifestyle</b></span> — <a href="https://futureproofinglifestyle.com" target="_blank" rel="noopener">Visit FPL →</a></div></div>
+
+  <div class="wrap">
+    <div class="ad" id="ad-top"><small>Advertisement</small></div>
+
+    <div class="topbar">
+      <button id="mute" class="mutebtn" title="Sound on/off" aria-label="Sound">&#128266;</button>
+      <header>
+        <h1>Flip a Coin</h1>
+        <p class="sub" id="sub">Heads or Tails — or switch to Yes / No to settle a question.</p>
+      </header>
+    </div>
+
+    <div class="seg" id="modeSeg">
+      <button class="seg-btn active" data-mode="ht">Heads &middot; Tails</button>
+      <button class="seg-btn" data-mode="yn">Yes &middot; No</button>
+      <span class="seg-thumb"></span>
+    </div>
+
+    <div class="ask" id="askPanel">
+      <p class="prompt" id="prompt">Optional: type or speak the question you want the coin to settle.</p>
+      <div class="qrow">
+        <input id="qinput" type="text" placeholder="What are you deciding? (optional)" autocomplete="off">
+        <button id="mic" class="mic" title="Speak your question" aria-label="Speak">&#127908;</button>
+      </div>
+    </div>
+
+    <div class="seg seg--sm" id="countSeg">
+      <button class="seg-btn active" data-n="1">1 Coin</button>
+      <button class="seg-btn" data-n="3">3 Coins</button>
+      <span class="seg-thumb"></span>
+    </div>
+
+    <div class="stage" id="stage"></div>
+
+    <div class="result">
+      <div class="verdict idle" id="verdict">Ready</div>
+      <div class="tally" id="tally"></div>
+    </div>
+    <div class="flipnum" id="flipnum"></div>
+
+    <button class="flip-btn" id="flip">Flip</button>
+
+    <div class="colors" id="colors"><span class="lab">Colour the coin</span></div>
+
+    <div class="share" id="share">
+      <button data-net="native">Share result</button>
+      <button data-net="whatsapp">WhatsApp</button>
+      <button data-net="twitter">X / Twitter</button>
+      <button data-net="copy">Copy</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><span class="num" id="aCount">0</span><span class="lbl" id="aLbl">Heads</span></div>
+      <div class="stat"><span class="num" id="bCount">0</span><span class="lbl" id="bLbl">Tails</span></div>
+      <div class="stat"><span class="num" id="nCount">0</span><span class="lbl" id="nLbl">Flips</span></div>
+    </div>
+
+    <div class="history">
+      <div class="history-head"><span>History — what you asked, what it said</span><button class="link-btn" id="clear">Clear</button></div>
+      <div class="hlist" id="hlist"></div>
+    </div>
+
+    <div class="ad" id="ad-mid"><small>Advertisement</small></div>
+
+    <div class="content">
+      <h2>A free online coin flip you can trust</h2>
+      <p>This coin flipper gives you a fair, fifty-fifty result every single time, using your device's built-in cryptographic random number generator — the same kind of randomness used to secure websites. There is nothing to install and no sign-up. Tap the coin or the Flip button, and you get an honest Heads or Tails. Flip one coin for a quick call, or three coins when you want a best-of-three majority.</p>
+
+      <h3>Heads and Tails, or Yes and No</h3>
+      <p>Most decisions are really just a question with two answers. That is why this tool has a <strong>Yes / No mode</strong>: switch it on, type or speak the question you are wrestling with, and let the coin answer. Every question you ask and the answer you get is saved in your history on this device, so you can look back and see what you asked and what the coin said. Your history and your running Heads-versus-Tails tally never leave your device.</p>
+
+      <h3>Is a coin flip really random?</h3>
+      <p>A real, physical coin toss is famously close to fifty-fifty, though a well-known study suggests a coin very slightly favours the side that started facing up. A digital flip avoids that bias entirely: each result here is drawn independently, so past flips never influence the next one. Ten Heads in a row does not make Tails "due" — the odds reset to fifty-fifty on every toss. That is the gambler's fallacy, and this tool is immune to it.</p>
+
+      <h3>A short history of the coin toss</h3>
+      <p>People have let a spinning coin decide things for more than two thousand years. The Romans called it <em>navia aut caput</em> — "ship or head" — after the images stamped on their coins. Since then, coin tosses have chosen the kickoff in football matches, settled which brother flew first at Kitty Hawk, and even helped name at least one major city. The appeal never changes: when two choices feel evenly balanced, a fair coin turns an endless argument into an instant, impartial answer.</p>
+
+      <h3>Frequently asked questions</h3>
+      <p><strong>Do I need an internet connection?</strong> Once the page has loaded, the flip itself works offline. You can also add it to your home screen for one-tap access.</p>
+      <p><strong>Can I flip more than one coin?</strong> Yes — choose 3 Coins and the tool shows the majority result plus the exact tally.</p>
+      <p><strong>Is my data private?</strong> Completely. Your history, stats, and colour choice are stored only in your own browser. We keep no accounts and no personal data.</p>
+      <p><strong>How do I decide with Yes / No mode?</strong> Switch to Yes / No, enter your question, and flip. Many people find that the moment the coin lands, their gut reaction to the answer tells them what they truly wanted — the coin is as much a mirror as a referee.</p>
+    </div>
+
+    <div class="ad" id="ad-foot"><small>Advertisement</small></div>
+
+    <footer>
+      <div>
+        <a href="about.html">About</a> ·
+        <a href="faq.html">FAQ</a> ·
+        <a href="privacy.html">Privacy</a> ·
+        <a href="terms.html">Terms</a> ·
+        <a href="contact.html">Contact</a>
+      </div>
+      <span class="fpl">A free tool by <a href="https://futureproofinglifestyle.com" target="_blank" rel="noopener">Future Proofing Lifestyle</a> · <span id="yr"></span></span>
+    </footer>
+  </div>
+
+<script>
+(function(){
+  'use strict';
+  /* ===== Config ===== */
+  var FPL_SHOW = true;   // set false for a clean, unbranded copy to give to others
+  if(!FPL_SHOW){ var fb=document.getElementById('fplbar'); if(fb) fb.style.display='none'; var fp=document.querySelector('footer .fpl'); if(fp) fp.style.display='none'; }
+  document.getElementById('yr').textContent = new Date().getFullYear();
+
+  var $=function(s){return document.querySelector(s);};
+  var stage=$('#stage'),verdict=$('#verdict'),tally=$('#tally'),flipBtn=$('#flip'),muteBtn=$('#mute'),hlist=$('#hlist');
+  var aC=$('#aCount'),bC=$('#bCount'),nC=$('#nCount'),aL=$('#aLbl'),bL=$('#bLbl'),nL=$('#nLbl');
+  var modeSeg=$('#modeSeg'),countSeg=$('#countSeg'),qinput=$('#qinput'),mic=$('#mic'),prompt=$('#prompt'),sub=$('#sub'),flipnum=$('#flipnum');
+  var modeBtns=[].slice.call(modeSeg.querySelectorAll('.seg-btn')), countBtns=[].slice.call(countSeg.querySelectorAll('.seg-btn'));
+
+  var LS={stats:'coinflip.stats',hist:'coinflip.history',cfg:'coinflip.cfg',cnt:'coinflip.count'};
+  var reduce=false; try{reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
+  function load(k,d){try{var v=JSON.parse(localStorage.getItem(k));return v==null?d:v;}catch(e){return d;}}
+  function save(){try{localStorage.setItem(LS.stats,JSON.stringify(stats));localStorage.setItem(LS.hist,JSON.stringify(history.slice(-40)));localStorage.setItem(LS.cfg,JSON.stringify({mode:faceMode,n:coinCount,muted:muted,color:colorKey}));localStorage.setItem(LS.cnt,String(flipCount));}catch(e){}}
+
+  var stats=load(LS.stats,{ht:{a:0,b:0,n:0},yn:{a:0,b:0,n:0}}); if(!stats.ht)stats.ht={a:0,b:0,n:0}; if(!stats.yn)stats.yn={a:0,b:0,n:0};
+  var history=load(LS.hist,[]); if(!Array.isArray(history))history=[];
+  var cfg=load(LS.cfg,{}); var flipCount=parseInt(load(LS.cnt,0),10)||0;
+  var faceMode=(cfg&&cfg.mode==='yn')?'yn':'ht';
+  var coinCount=(cfg&&cfg.n===3)?3:1; var muted=!!(cfg&&cfg.muted); var colorKey=(cfg&&cfg.color)||'gold';
+  var animating=false;
+
+  /* ===== Colours ===== */
+  var SCHEMES={
+    gold:{c:['#fdeeb0','#ecce78','#cda74e','#a9852f','#82642a'],g:'#7a5e22',r:'#6f5621',dot:'#e7c66a'},
+    silver:{c:['#ffffff','#e8ecf2','#c2cad6','#98a2b3','#6b7280'],g:'#4b5563',r:'#565f6e',dot:'#cbd5e1'},
+    rose:{c:['#ffe3ec','#f7b8cf','#e87ea6','#c85a83','#9c3f61'],g:'#7c2d4b',r:'#8a3557',dot:'#e87ea6'},
+    blue:{c:['#dcebff','#9cc3ff','#5b8def','#3563c9','#22409a'],g:'#16306e',r:'#274a9c',dot:'#5b8def'},
+    green:{c:['#dfffe6','#9be0ad','#57c07a','#2f9e57','#1f6e3c'],g:'#14532d',r:'#256b41',dot:'#57c07a'},
+    purple:{c:['#f0e0ff','#cba6f0','#a06fe0','#7a45c9','#54308f'],g:'#3f2170',r:'#5a3a97',dot:'#a06fe0'}
+  };
+  function applyColor(k){
+    var s=SCHEMES[k]||SCHEMES.gold; var r=document.documentElement.style;
+    r.setProperty('--c1',s.c[0]);r.setProperty('--c2',s.c[1]);r.setProperty('--c3',s.c[2]);r.setProperty('--c4',s.c[3]);r.setProperty('--c5',s.c[4]);
+    r.setProperty('--glyph',s.g);r.setProperty('--rim',s.r); colorKey=k;
+    [].forEach.call(document.querySelectorAll('.sw'),function(el){el.classList.toggle('sel',el.getAttribute('data-k')===k);});
+  }
+  (function buildSwatches(){
+    var box=$('#colors');
+    Object.keys(SCHEMES).forEach(function(k){
+      var b=document.createElement('div'); b.className='sw'; b.setAttribute('data-k',k); b.title=k;
+      b.style.background='linear-gradient(135deg,'+SCHEMES[k].c[1]+','+SCHEMES[k].c[3]+')';
+      b.addEventListener('click',function(){applyColor(k);save();});
+      box.appendChild(b);
+    });
+  })();
+
+  /* ===== Random + sound ===== */
+  function flip(){try{var a=new Uint8Array(1);(window.crypto||window.msCrypto).getRandomValues(a);return (a[0]&1)?'H':'T';}catch(e){return Math.random()<0.5?'H':'T';}}
+  var actx=null,master=null;
+  function ensureAudio(){if(actx){if(actx.state==='suspended')actx.resume();return;}try{actx=new (window.AudioContext||window.webkitAudioContext)();master=actx.createGain();master.gain.value=muted?0:1;master.connect(actx.destination);}catch(e){actx=null;}}
+  function whoosh(){if(!actx||muted)return;var t=actx.currentTime,o=actx.createOscillator(),g=actx.createGain();o.type='sine';o.frequency.setValueAtTime(680,t);o.frequency.exponentialRampToValueAtTime(240,t+.12);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.06,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+.16);o.connect(g);g.connect(master);o.start(t);o.stop(t+.2);}
+  function clink(v){if(!actx||muted)return;var t=actx.currentTime;v=Math.max(.05,Math.min(1,v||.9));[[2100,.1],[3160,.07],[4720,.05]].forEach(function(p,i){var o=actx.createOscillator(),g=actx.createGain();o.type='triangle';o.frequency.setValueAtTime(p[0]*(1+i*.002),t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(p[1]*v,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+.26);o.connect(g);g.connect(master);o.start(t);o.stop(t+.3);});}
+
+  /* ===== Coins ===== */
+  var coinRot=[];
+  function buildCoins(){
+    stage.innerHTML=''; stage.classList.toggle('three',coinCount===3); coinRot=[];
+    for(var i=0;i<coinCount;i++){
+      var slot=document.createElement('div');slot.className='slot';
+      var wrap=document.createElement('div');wrap.className='coin-wrap';
+      var coin=document.createElement('div');coin.className='coin';
+      coin.innerHTML='<div class="face heads"><span class="glyph"></span><span class="lbl"></span></div><div class="face tails"><span class="glyph"></span><span class="lbl"></span></div>';
+      var sh=document.createElement('div');sh.className='floor-shadow';
+      wrap.appendChild(coin);slot.appendChild(wrap);slot.appendChild(sh);stage.appendChild(slot);
+      coinRot.push(0); coin.addEventListener('click',doFlip);
+    }
+    renderFaces();
+  }
+  function renderFaces(){
+    var f0=faceMode==='yn'?'Yes':'H',f1=faceMode==='yn'?'No':'T',l0=faceMode==='yn'?'':'HEADS',l1=faceMode==='yn'?'':'TAILS';
+    stage.classList.toggle('yn',faceMode==='yn');
+    [].forEach.call(stage.querySelectorAll('.coin'),function(c){
+      c.querySelector('.heads .glyph').textContent=f0;c.querySelector('.tails .glyph').textContent=f1;
+      c.querySelector('.heads .lbl').textContent=l0;c.querySelector('.tails .lbl').textContent=l1;
+    });
+  }
+  function animateCoin(coin,idx,result){
+    return new Promise(function(resolve){
+      var wrap=coin.parentElement,shadow=wrap.parentElement.querySelector('.floor-shadow');
+      var start=coinRot[idx]||0,spins=4+Math.floor(Math.random()*3),target=(result==='H')?0:180;
+      var end=start+spins*360,mod=((end%360)+360)%360,delta=target-mod;if(delta<0)delta+=360;end+=delta;coinRot[idx]=end;
+      if(reduce){coin.style.transform='rotateX('+end+'deg)';setTimeout(function(){clink(.9);resolve();},120+idx*60);return;}
+      var dur=1120+Math.random()*200,delay=idx*90,peak=150+Math.random()*40,tilt=(Math.random()<.5?-1:1)*(6+Math.random()*6);
+      var ca=coin.animate([{transform:'rotateX('+start+'deg)'},{transform:'rotateX('+end+'deg)'}],{duration:dur,delay:delay,easing:'cubic-bezier(.15,.55,.25,1)',fill:'forwards'});
+      ca.onfinish=function(){coin.style.transform='rotateX('+end+'deg)';try{ca.cancel();}catch(e){}};
+      var wa=wrap.animate([
+        {transform:'translateY(0) rotate(0) scale(1)',offset:0,easing:'cubic-bezier(.18,.5,.4,1)'},
+        {transform:'translateY('+(-peak)+'px) rotate('+tilt+'deg) scale(1.05)',offset:.45,easing:'cubic-bezier(.55,0,.85,.5)'},
+        {transform:'translateY(0) rotate(0) scaleX(1.1) scaleY(.9)',offset:.82,easing:'cubic-bezier(.2,.7,.3,1)'},
+        {transform:'translateY('+(-peak*.13)+'px) scale(1)',offset:.9,easing:'cubic-bezier(.55,0,.85,.5)'},
+        {transform:'translateY(0) scaleX(1.04) scaleY(.97)',offset:.965,easing:'ease-out'},
+        {transform:'translateY(0) scale(1)',offset:1}
+      ],{duration:dur,delay:delay,fill:'forwards'});
+      wrap.parentElement.querySelector('.floor-shadow').animate([{transform:'scale(1)',opacity:.5},{transform:'scale(.6)',opacity:.25,offset:.45},{transform:'scale(1.06)',opacity:.5,offset:.82},{transform:'scale(1)',opacity:.5}],{duration:dur,delay:delay,fill:'forwards'});
+      setTimeout(function(){clink(.95-idx*.12);},delay+dur*.82);
+      wa.onfinish=function(){try{wa.cancel();}catch(e){}resolve();};
+    });
+  }
+
+  function doFlip(){
+    if(animating)return; animating=true; flipBtn.disabled=true; ensureAudio(); whoosh();
+    if(listening){try{rec.stop();}catch(e){}}
+    var q=(qinput.value||'').trim();
+    verdict.textContent='…'; verdict.className='verdict idle'; tally.textContent='';
+    var coins=[].slice.call(stage.querySelectorAll('.coin')),results=[];
+    var jobs=coins.map(function(c,i){var r=flip();results[i]=r;return animateCoin(c,i,r);});
+    Promise.all(jobs).then(function(){finish(results,q);animating=false;flipBtn.disabled=false;});
+  }
+  function word(v){return faceMode==='yn'?(v==='H'?'Yes':'No'):(v==='H'?'Heads':'Tails');}
+  function wordIn(m,v){return m==='yn'?(v==='H'?'Yes':'No'):(v==='H'?'Heads':'Tails');}
+  function plural(m,v,c){if(m==='yn')return wordIn(m,v);return (v==='H'?'Head':'Tail')+(c===1?'':'s');}
+  function finish(results,q){
+    var a=0;for(var i=0;i<results.length;i++)if(results[i]==='H')a++;var b=results.length-a,major=a>b?'H':'T';
+    var cur=stats[faceMode];cur.a+=a;cur.b+=b;cur.n+=1; flipCount+=1;
+    history.push({t:Date.now(),mode:faceMode,n:results.length,faces:results.slice(),major:major,q:q||''}); if(history.length>40)history=history.slice(-40);
+    if(results.length===1){verdict.textContent=word(results[0]);verdict.className='verdict '+(results[0]==='H'?'h':'t');tally.textContent=q?('“'+q+'”'):'';}
+    else{verdict.textContent=word(major);verdict.className='verdict '+(major==='H'?'h':'t');tally.textContent=a+' '+plural(faceMode,'H',a)+'  ·  '+b+' '+plural(faceMode,'T',b);}
+    if(!reduce){try{verdict.animate([{transform:'scale(.82)',opacity:0},{transform:'scale(1)',opacity:1}],{duration:300,easing:'cubic-bezier(.2,1.35,.4,1)'});}catch(e){}}
+    lastResultText = buildShareText();
+    qinput.value=''; renderStats(); renderHistory(); renderFlipNum(); save();
+  }
+  function renderFlipNum(){ flipnum.innerHTML = flipCount>0 ? ('That was flip number <b>'+flipCount.toLocaleString()+'</b>') : ''; }
+  function renderStats(){var c=stats[faceMode];aC.textContent=c.a;bC.textContent=c.b;nC.textContent=c.n;aL.textContent=faceMode==='yn'?'Yes':'Heads';bL.textContent=faceMode==='yn'?'No':'Tails';nL.textContent=faceMode==='yn'?'Asked':'Flips';}
+  function fmt(ts){try{return new Date(ts).toLocaleString([], {hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'});}catch(e){return '';}}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];});}
+  function miniPills(f){var s='<span class="mini">';for(var i=0;i<f.length;i++)s+='<span class="pill '+(f[i]==='H'?'h':'t')+'">'+wordIn('ht',f[i]).charAt(0)+'</span>';return s+'</span>';}
+  function cnt(e,v){var c=0;for(var i=0;i<e.faces.length;i++)if(e.faces[i]===v)c++;return c;}
+  function renderHistory(){
+    hlist.innerHTML=''; if(!history.length){hlist.innerHTML='<span class="empty">No flips yet. Flip the coin above.</span>';return;}
+    history.slice(-20).reverse().forEach(function(e){
+      var ansW=e.n===1?wordIn(e.mode,e.faces[0]):wordIn(e.mode,e.major);
+      var ansC=(e.n===1?(e.faces[0]==='H'):(e.major==='H'))?'h':'t';
+      var extra=e.n>1?' <span style="opacity:.7;font-weight:600">('+cnt(e,'H')+'–'+cnt(e,'T')+')</span>':'';
+      var tag=e.mode==='yn'?'Ask':'Coin';
+      var d=document.createElement('div');d.className='qa';
+      var q=e.q?'<div class="qa-q"><span class="quote">“</span>'+esc(e.q)+'<span class="quote">”</span></div>':'<div class="qa-q" style="color:#8294bd;font-style:italic">(no question noted)</div>';
+      d.innerHTML='<div class="qa-top"><span class="qa-ans '+ansC+'">'+ansW+extra+'</span><span class="tag">'+tag+'</span></div>'+q+'<div class="qa-meta">'+miniPills(e.faces)+'<span>'+fmt(e.t)+'</span></div>';
+      hlist.appendChild(d);
+    });
+  }
+
+  /* ===== Mode / count / mute ===== */
+  function applyMode(){
+    renderFaces(); flipBtn.textContent=faceMode==='yn'?'Ask':'Flip';
+    prompt.textContent=faceMode==='yn'?'Type or speak the question you want the coin to settle.':'Optional: note what this flip is for.';
+    qinput.placeholder=faceMode==='yn'?'e.g. Should I go?':'What are you deciding? (optional)';
+    sub.textContent=faceMode==='yn'?'Ask a yes / no question and let the coin decide.':'Heads or Tails — or switch to Yes / No to settle a question.';
+    modeBtns.forEach(function(x){x.classList.toggle('active',x.getAttribute('data-mode')===faceMode);});
+    modeSeg.classList.toggle('right',faceMode==='yn'); renderStats();
+    verdict.textContent='Ready';verdict.className='verdict idle';tally.textContent='';
+  }
+  modeBtns.forEach(function(b){b.addEventListener('click',function(){if(animating)return;var m=b.getAttribute('data-mode');if(m===faceMode)return;faceMode=m;applyMode();save();});});
+  countBtns.forEach(function(b){b.addEventListener('click',function(){if(animating)return;var n=parseInt(b.getAttribute('data-n'),10);if(n===coinCount)return;coinCount=n;countBtns.forEach(function(x){x.classList.toggle('active',x===b);});countSeg.classList.toggle('right',n===3);buildCoins();verdict.textContent='Ready';verdict.className='verdict idle';tally.textContent='';save();});});
+  muteBtn.addEventListener('click',function(){muted=!muted;if(master)master.gain.value=muted?0:1;muteBtn.innerHTML=muted?'&#128263;':'&#128266;';save();});
+  $('#clear').addEventListener('click',function(){if(animating)return;stats={ht:{a:0,b:0,n:0},yn:{a:0,b:0,n:0}};history=[];renderStats();renderHistory();save();});
+  flipBtn.addEventListener('click',doFlip);
+  qinput.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();doFlip();}});
+  document.addEventListener('keydown',function(e){if(e.target===qinput)return;if(e.code==='Space'){e.preventDefault();doFlip();}});
+
+  /* ===== Speech to text ===== */
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition,rec=null,listening=false;
+  if(!SR){mic.style.display='none';}
+  else{mic.addEventListener('click',function(){
+    if(listening){try{rec.stop();}catch(e){}return;}
+    try{rec=new SR();rec.lang='en-US';rec.interimResults=true;rec.maxAlternatives=1;
+      rec.onstart=function(){listening=true;mic.classList.add('on');};
+      rec.onresult=function(ev){var s='';for(var i=0;i<ev.results.length;i++)s+=ev.results[i][0].transcript;qinput.value=s;};
+      rec.onerror=function(){listening=false;mic.classList.remove('on');};
+      rec.onend=function(){listening=false;mic.classList.remove('on');};
+      rec.start();}catch(e){listening=false;mic.classList.remove('on');}
+  });}
+
+  /* ===== Share ===== */
+  var lastResultText='';
+  function buildShareText(){
+    var v=verdict.textContent; if(!v||v==='Ready'||v==='…')v=(faceMode==='yn'?'Yes/No':'Heads/Tails');
+    var q=(history.length&&history[history.length-1].q)||'';
+    var base = q ? ('I asked "'+q+'" and the coin said '+verdict.textContent) : ('My coin flip: '+verdict.textContent);
+    return base;
+  }
+  $('#share').addEventListener('click',function(e){
+    var btn=e.target.closest('button'); if(!btn)return; var net=btn.getAttribute('data-net');
+    var text=lastResultText||'Flip a coin'; var url=location.href.split('#')[0];
+    if(net==='native'){ if(navigator.share){navigator.share({title:'Flip a Coin',text:text,url:url}).catch(function(){});} else {copy(text+' '+url);} }
+    else if(net==='whatsapp'){ open('https://wa.me/?text='+encodeURIComponent(text+' '+url)); }
+    else if(net==='twitter'){ open('https://twitter.com/intent/tweet?text='+encodeURIComponent(text)+'&url='+encodeURIComponent(url)); }
+    else if(net==='copy'){ copy(text+' '+url); }
+  });
+  function open(u){window.open(u,'_blank','noopener');}
+  function copy(t){try{navigator.clipboard.writeText(t);var b=document.querySelector('#share [data-net="copy"]');if(b){var o=b.textContent;b.textContent='Copied!';setTimeout(function(){b.textContent=o;},1400);}}catch(e){}}
+
+  /* ===== Init ===== */
+  countBtns.forEach(function(x){x.classList.toggle('active',parseInt(x.getAttribute('data-n'),10)===coinCount);});
+  countSeg.classList.toggle('right',coinCount===3);
+  muteBtn.innerHTML=muted?'&#128263;':'&#128266;';
+  applyColor(colorKey); buildCoins(); applyMode(); renderStats(); renderHistory(); renderFlipNum();
+})();
+</script>
+</body>
+</html>
